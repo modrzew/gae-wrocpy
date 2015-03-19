@@ -25,8 +25,11 @@
         <div class="reveal">
             <div class="slides">
                 <section>
+                    <h1>Hello world</h1>
+                </section>
+                <section>
                     <section>
-                        <h2>Najprostsza aplikacja</h2>
+                        <h2>WSGI</h2>
                     </section>
                     <section>
                         <h3>main.py</h3>
@@ -46,14 +49,6 @@ def application(environment, start_response):
                     <section>
                         <h3>app.yaml</h3>
                         <pre><code class="yaml"data-trim>
-application: wrocpy
-version: 1
-runtime: python27
-api_version: 1
-
-handlers:
-- url: .*
-  script: main.application
                         </code></pre>
                     </section>
                     <section>
@@ -62,6 +57,28 @@ handlers:
 $> appcfg.py update app.yaml
                         </code></pre>
                     </section>
+                </section>
+
+                <section>
+                    <h2>Django</h2>
+                </section>
+
+                <section>
+                    <h2>Flask</h2>
+                </section>
+
+                <section>
+                    <h2>webapp2</h2>
+                    <p>to je builtin</p>
+                </section>
+
+                <section>
+                    <h1>Przechowywanie danych</h1>
+                </section>
+
+                <section>
+                    <h2>Datastore</h2>
+                    <p>nierelacyjna baza danych, bla bla</p>
                 </section>
             </div>
         </div>
