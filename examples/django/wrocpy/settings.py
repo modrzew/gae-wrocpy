@@ -1,0 +1,2 @@
+SECRET_KEY = 'lol'
+ROOT_URLCONF = ''

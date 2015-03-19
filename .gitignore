@@ -6,3 +6,8 @@ node_modules/
 .sass-cache
 css/reveal.min.css
 js/reveal.min.js
+
+examples/**/bin/**/*
+examples/**/parts/**/*
+examples/**/eggs/**/*
+examples/**/develop-eggs/**/*
