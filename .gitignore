@@ -14,3 +14,4 @@ examples/**/eggs/**/*
 examples/**/libs/**/*
 examples/**/develop-eggs/**/*
 .installed.cfg
+*.pyc

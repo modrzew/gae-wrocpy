@@ -3,6 +3,6 @@ from flask import Flask
 application = Flask('wrocpy')
 
 
-@application.route('/flask')
+@application.route('/')
 def hello():
     return 'Hello world'
