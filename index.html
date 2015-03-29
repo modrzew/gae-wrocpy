@@ -131,6 +131,7 @@ $> appcfg.py update app.yaml
                         <h2>Flask</h2>
                     </section>
                     <section>
+                        <h3>:(</h3>
                         <ul>
                             <li>Flask nie jest builtinem</li>
                             <li>App Engine nie ma pojęcia co to easy_install/pip</li>
@@ -145,7 +146,7 @@ $> appcfg.py update app.yaml
                             <li>Skopiuj kod do projektu</li>
                             <li>Wgraj kod aplikacji i kod zależności razem</li>
                             <li>???</li>
-                            <li>PROFIT!</li>
+                            <li>PROFIT! ...eee</li>
                         </ol>
                     </section>
                     <section>
@@ -219,11 +220,9 @@ if distlib_path not in sys.path:
                         <pre><code class="python" data-trim>
 import webapp2
 
-
 class HelloWorldHandler(webapp2.RequestHandler):
     def get(self):
         self.response.write('Hi! I\'m running inside webapp2!')
-
 
 application = webapp2.WSGIApplication([
     webapp2.Route(
@@ -240,8 +239,249 @@ application = webapp2.WSGIApplication([
                 </section>
 
                 <section>
-                    <h2>Datastore</h2>
-                    <p>nierelacyjna baza danych, bla bla</p>
+                    <section>
+                        <h2>Datastore</h2>
+                    </section>
+                    <section>
+                        <h3>Właściwości</h3>
+                        <ul>
+                            <li>nierelacyjna baza danych</li>
+                            <li>klucz/wartość</li>
+                            <li>ewentualnie spójna (eventual consistency)</li>
+                            <li>wysoka dostępność danych (zapis/odczyt)</li>
+                            <li>transakcje i ACID</li>
+                            <li>wsparcie dla zapytań (GQL)</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3>Model</h3>
+                        <pre><code class="python" data-trim="">
+class Hello(ndb.Model):
+    count = ndb.IntegerProperty(indexed=False, default=0)
+    name = ndb.StringProperty(required=True)
+    description = ndb.TextProperty()
+    created_at = ndb.DateTimeProperty(auto_now_add=True)
+    updated_at = ndb.DateTimeProperty(auto_now=True)
+    children = ndb.KeyProperty(repeated=True)
+                        </code></pre>
+                        <pre><code class="python" data-trim="">
+hello = Hello(
+    name='Hi!',
+    count=3,
+    children=[
+        hello_key1,
+        hello_key2,
+    ],
+)
+hello.put()
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Hooki</h3>
+                        <pre><code class="python" data-trim="">
+import logging
+from google.appengine.ext import ndb
+
+class Hello(ndb.Model):
+    count = ndb.IntegerProperty()
+
+    def _pre_put_hook(self):
+        logging.info('Before putting!')
+        self.count += 1
+
+    def _post_put_hook(self):
+        logging.info('After putting!')
+        self.count += 2
+                        </code></pre>
+                        <pre><code class="python" data-trim="">
+>>> hello = Hello(count=5)
+>>> hello.put()
+INFO:root:Before putting!
+INFO:root:After putting!
+>>> hello.count
+8
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Structured properties</h3>
+                        <pre><code class="python" data-trim="">
+class Container(ndb.Model):
+    hello = ndb.StructuredProperty(Hello)
+    hello_children = ndb.LocalStructuredProperty(
+        Hello,
+        repeated=True,
+        compressed=True,
+    )
+    additional_data = ndb.JsonProperty(indexed=True)
+    user = ndb.PickleProperty(compressed=True)
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Zapytania</h3>
+                        <pre><code class="python" data-trim>
+from datetime import datetime
+
+query = Hello.query(Hello.created_at > datetime(2015, 4, 7))
+all_results = query.fetch()
+first_page, cursor, more = query.fetch_page(100)
+if more:
+    next_page, cursor, more = query.fetch_page(100, start_cursor=cursor)
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Klucz/wartość, powiadasz?</h3>
+                        <pre><code class="python" data-trim>
+key = ndb.Key(Hello, 581247529)
+# or
+key = ndb.Key('Hello', 'I can be a string too')
+# or using already created object
+key = hello_obj.key
+# Get it!
+new_obj = key.get()
+print new_obj
+# Hello(name='Hi!', count=3)
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Fajne i niefajne strony zapytań</h3>
+                        <ul>
+                            <li>operator <code>IN</code></li>
+                            <li>tylko jeden operator nierówności na zapytanie</li>
+                            <li>nie ma <code>LIKE</code>, nie ma wyszukiwania pełnotekstowego</li>
+                            <li>są operatory <code>AND</code> i <code>OR</code> \o/</li>
+                            <li>ale nie można ich nadużywać /o\</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3>Ancestor queries</h3>
+                        <ul>
+                            <li>obiekty w bazie mogą mieć swojego "przodka"</li>
+                            <li>przodek i potomkowie należą do jednej grupy, która jest silnie spójna</li>
+                            <li>limit operacji zapisu w całej grupie: 5/s</li>
+                            <li>bardziej wydajne niż zwykłe zapytania</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3>Transakcje</h3>
+                        <pre><code class="python" data-trim>
+@ndb.transactional(retries=3)
+def change_name(hello_key, name):
+    """Changes hello's name for sure, or dies trying
+
+    Will also return hello's last modified date.
+    """
+    hello = hello_key.get()
+    hello.name = name
+    hello.put()
+    return hello.updated_at
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Asynchroniczność</h3>
+                        <pre><code class="python" data-trim>
+hello = Hello(name='Howdy!')
+hello_future = hello.put_async()
+another_hello_future = Hello.get_by_id_async(724)
+# ...123 lines later...
+hello_key = hello_future.get_result()
+another_hello = another_hello_future.get_result()
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Asynchroniczność: tasklety</h3>
+                        <pre><code class="python" data-trim>
+@ndb.transactional(retries=3)
+@ndb.tasklet
+def change_name_async(hello_key, name):
+    """Changes hello's name for sure, or dies trying
+
+    Will also return hello's last modified date.
+    """
+    hello = yield hello_key.get_async()
+    hello.name = name
+    yield hello.put_async()
+    raise ndb.Return(hello.updated_at)
+                        </code></pre>
+                        <pre><code class="python" data-trim>
+updated_at = change_name_async(ndb.Key(Hello, 123), 'Whooo').get_result()
+                        </code></pre>
+                    </section>
+                </section>
+                <section>
+                    <h2>Search API</h2>
+                    <ul>
+                        <li>wyszukiwarka pełnotekstowa</li>
+                        <li>idealna do... wyszukiwania! (w porównaniu z ndb)</li>
+                        <li>
+                            brak ograniczeń co do złożoności zapytań
+                            <ul>
+                                <li><code>kopytko OR (count>7 AND (NOT type=cat OR type=lion))</code></li>
+                            </ul>
+                        </li>
+                        <li>
+                            współrzędne geograficzne:
+                            <ul>
+                                <li><code>distance(loc, geopoint(12, 34)) > 10000</code></li>
+                            </ul>
+                        </li>
+                        <li>dynamiczne sortowanie wg wyrażenia</li>
+                    </ul>
+                </section>
+                <section>
+                    <section>
+                        <h2>Blobstore / Cloud Storage</h2>
+                    </section>
+                    <section>
+                        <h3>Gdzie leży problem?</h3>
+                        <pre><code class="python" data-trim>
+with open('sample.txt', 'w') as f:
+    f.write('Something!')
+                        </code></pre>
+                        <pre><code data-trim>
+Traceback (most recent call last):
+  File "/base/data/home/runtimes/python27/python27_lib/versions/1/google/appengine/runtime/wsgi.py", line 267, in Handle
+    result = handler(dict(self._environ), self._StartResponse)
+  File "/base/data/home/apps/s~wrocpy/wsgi:1.383232241008519653/main.py", line 7, in application
+    fopen()
+  File "/base/data/home/apps/s~wrocpy/wsgi:1.383232241008519653/main.py", line 2, in fopen
+    with open('file.txt', 'w') as f:
+IOError: [Errno 30] Read-only file system: 'file.txt'
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Blobstore</h3>
+                        <ul>
+                            <li>klucz/wartość</li>
+                            <li>odczyt/zapis danych binarnych z poziomu aplikacji</li>
+                            <li>możliwość zapisywania plików od użytkownika</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3>Cloud Storage</h3>
+                        <ul>
+                            <li>zewnętrzna usługa</li>
+                            <li>wiadra, katalogi i pliki</li>
+                            <li>dostęp: HTTP lub <code>gsutil</code></li>
+                        </ul>
+                    </section>
+                </section>
+                <section>
+                    <h2>Cloud SQL</h2>
+                    <ul>
+                        <li>MySQL podpięty pod aplikację w App Engine</li>
+                        <li>dostępny także poza App Engine</li>
+                        <li>builtin: <code>MySQLdb</code></li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>BigQuery</h2>
+                    <ul>
+                        <li>relacyjna baza danych (hurtownia)</li>
+                        <li>tylko dodawanie nowych rekordów</li>
+                        <li>brak możliwości modyfikacji relacji</li>
+                        <li>radzi sobie z terabajtami danych</li>
+                        <li>w porównaniu z ndb/Search API, zapytania są wolne</li>
+                    </ul>
                 </section>
             </div>
         </div>
