@@ -11,4 +11,4 @@ libraries:
 
 handlers:
 - url: /.*
-  script: main.application
+  script: wrocpy.wsgi.application
