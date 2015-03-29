@@ -5,4 +5,4 @@ application = Flask('wrocpy')
 
 @application.route('/')
 def hello():
-    return 'Hello world'
+    return 'Hello world! I am a Flask app.'
