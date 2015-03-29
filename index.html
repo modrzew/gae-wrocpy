@@ -44,32 +44,195 @@ def application(environment, start_response):
     start_response(status, response_headers)
     return [response_body]
                         </code></pre>
-                        <aside class="notes">herp derp</aside>
+                        <aside class="notes"></aside>
                     </section>
                     <section>
                         <h3>app.yaml</h3>
                         <pre><code class="yaml"data-trim>
+application: wrocpy
+module: wsgi
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+handlers:
+- url: /.*
+  script: main.application
                         </code></pre>
                     </section>
                     <section>
                         <h3>Deployment</h3>
                         <pre><code class="bash" data-trim>
 $> appcfg.py update app.yaml
+11:53 AM Application: wrocpy; module: wsgi; version: 1
+11:53 AM Host: appengine.google.com
+11:53 AM Starting update of app: wrocpy, module: wsgi, version: 1
+11:53 AM Getting current resource limits.
+11:53 AM Scanning files on local disk.
+11:53 AM Cloning 2 application files.
+11:53 AM Uploading 1 files and blobs.
+11:53 AM Uploaded 1 files and blobs.
+11:53 AM Compilation starting.
+11:53 AM Compilation completed.
+11:53 AM Starting deployment.
+11:53 AM Checking if deployment succeeded.
+11:53 AM Deployment successful.
+11:53 AM Checking if updated app version is serving.
+11:53 AM Completed update of app: wrocpy, module: wsgi, version: 1
                         </code></pre>
                     </section>
                 </section>
 
                 <section>
-                    <h2>Django</h2>
+                    <section>
+                        <h2>Django</h2>
+                    </section>
+
+                    <section>
+                        <ul>
+                            <li><code>import django</code> (&lt;=1.5)</li>
+                            <li>
+                                nie trzeba nic zmieniać w aplikacji, żeby zaczęła działać
+                                <ul>
+                                    <li>poza bazą danych - ale o tym później</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Struktura projektu</h3>
+                        <ul>
+                            <li>
+                                <code>wrocpy/</code>
+                                <ul>
+                                    <li>
+                                        <code>hello/</code>
+                                        <ul>
+                                            <li><code>__init__.py</code></li>
+                                            <li><code>views.py</code></li>
+                                        </ul>
+                                    </li>
+                                    <li><code>__init__.py</code></li>
+                                    <li><code>settings.py</code></li>
+                                    <li><code>urls.py</code></li>
+                                    <li><code>wsgi.py</code></li>
+                                </ul>
+                            </li>
+                            <li><code>manage.py</code></li>
+                            <li class="fragment"><code><b>app.yaml</b></code></li>
+                        </ul>
+                    </section>
                 </section>
 
                 <section>
-                    <h2>Flask</h2>
+                    <section>
+                        <h2>Flask</h2>
+                    </section>
+                    <section>
+                        <ul>
+                            <li>Flask nie jest builtinem</li>
+                            <li>App Engine nie ma pojęcia co to easy_install/pip</li>
+                            <li>przesyłanie eggów niewiele pomoże</li>
+                            <li>co robić, jak żyć?</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3>Rozwiązanie</h3>
+                        <ol>
+                            <li>Zainstaluj paczki lokalnie</li>
+                            <li>Skopiuj kod do projektu</li>
+                            <li>Wgraj kod aplikacji i kod zależności razem</li>
+                            <li>???</li>
+                            <li>PROFIT!</li>
+                        </ol>
+                    </section>
+                    <section>
+                        <h3>Lepsze rozwiązanie:</h3>
+                        <h2>buildout + appfy.recipe.gae</h2>
+                        <p><a href="https://github.com/prmtl/appfy.recipe.gae">github.com/prmtl/appfy.recipe.gae</a></p>
+                    </section>
+                    <section>
+                        <h3>setup.py</h3>
+                        <pre><code class="python" data-trim>
+from setuptools import (
+    find_packages,
+    setup,
+)
+
+install_requires = [
+    'Flask'
+]
+
+setup(
+    name='wrocpy-flask',
+    version='1.0',
+    description='',
+    author='',
+    packages=find_packages(''),
+    install_requires=install_requires,
+    tests_require=None,
+    dependency_links=[],
+    entry_points=None,
+)
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>buildout.cfg</h3>
+                        <pre><code class="buildout" data-trim>
+[buildout]
+parts =
+    app_lib
+develop = .
+eggs = wrocpy-flask
+
+[app_lib]
+recipe = appfy.recipe.gae:app_lib
+lib-directory = src/libs
+eggs = ${buildout:eggs}
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>appengine_config.py</h3>
+                        <pre><code class="python" data-trim>
+import os
+import sys
+
+# Inject 3rd party libraries into sys.path
+src_path = os.path.dirname(__file__)
+distlib_path = os.path.join(src_path, 'libs')
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+if distlib_path not in sys.path:
+    sys.path.insert(0, distlib_path)
+                        </code></pre>
+                    </section>
                 </section>
 
                 <section>
-                    <h2>webapp2</h2>
-                    <p>to je builtin</p>
+                    <section>
+                        <h2>webapp2</h2>
+                        <p><a href="https://webapp-improved.appspot.com/">webapp-improved.appspot.com</a></p>
+                    </section>
+                    <section>
+                        <pre><code class="python" data-trim>
+import webapp2
+
+
+class HelloWorldHandler(webapp2.RequestHandler):
+    def get(self):
+        self.response.write('Hi! I\'m running inside webapp2!')
+
+
+application = webapp2.WSGIApplication([
+    webapp2.Route(
+        '/',
+        HelloWorldHandler,
+    ),
+])
+                        </code></pre>
+                    </section>
                 </section>
 
                 <section>
