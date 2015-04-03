@@ -157,11 +157,6 @@ $> appcfg.py update app.yaml
                     <section>
                         <h3>setup.py</h3>
                         <pre><code class="python" data-trim>
-from setuptools import (
-    find_packages,
-    setup,
-)
-
 install_requires = [
     'Flask'
 ]
@@ -327,7 +322,10 @@ query = Hello.query(Hello.created_at > datetime(2015, 4, 7))
 all_results = query.fetch()
 first_page, cursor, more = query.fetch_page(100)
 if more:
-    next_page, cursor, more = query.fetch_page(100, start_cursor=cursor)
+    next_page, cursor, more = query.fetch_page(
+        100,
+        start_cursor=cursor,
+    )
                         </code></pre>
                     </section>
                     <section>
@@ -405,7 +403,10 @@ def change_name_async(hello_key, name):
     raise ndb.Return(hello.updated_at)
                         </code></pre>
                         <pre><code class="python" data-trim>
-updated_at = change_name_async(ndb.Key(Hello, 123), 'Whooo').get_result()
+updated_at = change_name_async(
+    ndb.Key(Hello, 123),
+    'Whooo',
+).get_result()
                         </code></pre>
                     </section>
                 </section>
@@ -458,11 +459,11 @@ with open('sample.txt', 'w') as f:
                         </code></pre>
                         <pre><code data-trim>
 Traceback (most recent call last):
-  File "/base/data/home/runtimes/python27/python27_lib/versions/1/google/appengine/runtime/wsgi.py", line 267, in Handle
+  File "/base/.../appengine/runtime/wsgi.py", line 267, in Handle
     result = handler(dict(self._environ), self._StartResponse)
-  File "/base/data/home/apps/s~wrocpy/wsgi:1.383232241008519653/main.py", line 7, in application
+  File "/base/.../s~wrocpy/.../main.py", line 7, in application
     fopen()
-  File "/base/data/home/apps/s~wrocpy/wsgi:1.383232241008519653/main.py", line 2, in fopen
+  File "/base/.../s~wrocpy/.../main.py", line 2, in fopen
     with open('file.txt', 'w') as f:
 IOError: [Errno 30] Read-only file system: 'file.txt'
                         </code></pre>
@@ -474,6 +475,20 @@ IOError: [Errno 30] Read-only file system: 'file.txt'
                             <li>odczyt/zapis danych binarnych z poziomu aplikacji</li>
                             <li>możliwość zapisywania plików od użytkownika</li>
                         </ul>
+                    </section>
+                    <section>
+                        <h3>Upload plików</h3>
+                        <pre><code class="python" data-trim="">
+class UploadHandler(blobstore_handler.BlobstoreUploadHandler):
+    def get(self):
+        upload_url = blobstore.create_upload_url('/upload')
+        self.response.write(upload_url)
+
+    def post(self):
+        upload_files = self.get_uploads('file')
+        blob_info = upload_files[0]
+        # Do something
+                        </code></pre>
                     </section>
                     <section>
                         <h3>Cloud Storage</h3>
@@ -513,6 +528,14 @@ https://lh4.ggpht.com/[a-zA-Z0-9\-]+=(w|s|h)\d+(-c|)
 https://lh4.ggpht.com/0FEEDADEADF15h=s300-c
                         </code></pre>
                     </section>
+                    <section>
+                        <h3>Kopia zapasowa</h3>
+                        <ul>
+                            <li>Datastore Admin</li>
+                            <li>Datastore -&gt; Blobstore/GCS</li>
+                            <li>GCS -&gt; localhost</li>
+                        </ul>
+                    </section>
                 </section>
                 <section>
                     <section>
@@ -541,6 +564,382 @@ https://lh4.ggpht.com/0FEEDADEADF15h=s300-c
                         <li>dostępny także poza App Engine</li>
                         <li>builtin: <code>MySQLdb</code></li>
                     </ul>
+                </section>
+
+
+                <section>
+                    <h1>Skalowalność</h1>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Moduły, wersje</h2>
+                    </section>
+                    <section>
+                        <p><img src="img/modules_hierarchy.png" alt="" width="100%"></p>
+                    </section>
+                    <section>
+                        <h3>Dostęp</h3>
+                        <pre><code data-trim>
+https://wrocpy.appspot.com
+                        </code></pre>
+                        <pre><code data-trim>
+https://module-dot-wrocpy.appspot.com
+                        </code></pre>
+                        <pre><code data-trim>
+https://version-dot-module-dot-wrocpy.appspot.com
+                        </code></pre>
+                        <pre><code data-trim>
+https://instance-dot-version-dot-module-dot-wrocpy.appspot.com
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>dispatch.yaml</h3>
+                        <pre><code class="yaml" data-trim="">
+dispatch:
+  - url: "*/flask*"
+    module: flask
+
+  - url: "*/django*"
+    module: django
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Konfiguracja modułów</h3>
+                        <p>app.yaml per moduł</p>
+                        <pre><code class="yaml" data-trim="">
+application: wrocpy
+module: django
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+instance_class: F2
+automatic_scaling:
+  max_idle_instances: 4
+  min_pending_latency: 500ms
+                        </code></pre>
+                    </section>
+
+                    <section>
+                        <h3>Automatic, basic, manual</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Automatic</th>
+                                    <th>Basic</th>
+                                    <th>Manual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Instancje</td>
+                                    <td>tymczasowe</td>
+                                    <td>trwałe</td>
+                                    <td>trwałe</td>
+                                </tr>
+                                <tr>
+                                    <td>Deadline</td>
+                                    <td>60 sekund</td>
+                                    <td>brak</td>
+                                    <td>brak</td>
+                                </tr>
+                                <tr>
+                                    <td>Wątki</td>
+                                    <td>✘</td>
+                                    <td>✔</td>
+                                    <td>✔</td>
+                                </tr>
+                                <tr>
+                                    <td>Liczba instancji</td>
+                                    <td>Auto</td>
+                                    <td>Auto</td>
+                                    <td>Ręczna</td>
+                                </tr>
+                                <tr>
+                                    <td>Start/stop</td>
+                                    <td>Auto/auto</td>
+                                    <td>Auto/auto</td>
+                                    <td>Auto/manual</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <section>
+                        <h3>Komunikacja</h3>
+                        <pre><code class="python" data-trim="">
+from google.appengine.api import modules, urlfetch
+
+hostname = modules.get_hostname(module='flask')
+url = 'http://%s/do_something' % hostname
+urlfetch.fetch(url)
+                        </code></pre>
+                    </section>
+                </section>
+
+
+                <section>
+                    <h1>Usługi</h1>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Kolejki zadań</h2>
+                    </section>
+
+                    <section>
+                        <h3>taskqueue</h3>
+                        <ul>
+                            <li>pull vs push</li>
+                            <li>obsługa za pomocą handlerów</li>
+                            <li>skalowanie</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>queue.yaml</h3>
+                        <pre><code class="yaml" data-trim="">
+queue:
+- name: incoming
+  mode: pull
+
+- name: default
+  rate: 20/s
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>push queues</h3>
+                        <pre><code class="yaml" data-trim="">
+- name: user-actions
+  rate: 500/s
+  bucket_size: 100
+  max_concurrent_requests: 500
+
+- name: denormalization
+  rate: 10/s
+  bucket_size: 5
+  max_concurrent_requests: 5
+  retry_parameters:
+    min_backoff_seconds: 3600
+    task_age_limit: 12h
+    max_doublings: 3
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Dodawanie zadania</h3>
+                        <pre><code class="python" data-trim="">
+from datetime import datetime, timedelta
+from google.appengine.api import taskqueue
+
+taskqueue.add(
+    '/do_stuff',
+    payload=json.dumps(payload),
+    method='POST',
+    queue_name='denormalization',
+    target='flask',
+    # countdown='30',
+    # eta=datetime.now() + timedelta(hours=3),
+)
+                        </code></pre>
+                    </section>
+
+                    <section>
+                        <h3>deferred</h3>
+                        <pre><code class="python" data-trim="">
+from google.appengine.api import deferred
+
+def do_something(wr, oc, py=None):
+    obj = ndb.Key(urlsafe=wr).get()
+    wr.oc = oc
+    if py:
+        wr.py = py
+    wr.put()
+
+deferred.defer(do_something, _queue='user-actions')
+                        </code></pre>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>cron</h2>
+                        <p>cron.yaml</p>
+                        <pre><code class="yaml" data-trim="">
+cron:
+- description: Refresh things for Flask
+  url: /update
+  schedule: every 1 hours from 8:00 to 16:00
+  target: flask
+
+- description: Check something for Django
+  url: /check_something
+  schedule: every monday 09:00
+  target: django
+  timezone: Europe/Warsaw
+                        </code></pre>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>memcache</h2>
+                        <pre><code class="python" data-trim>
+from google.appengine.api import memcache
+
+memcache.add('counter', 5)
+memcache.incr('counter')
+memcache.incr('counter')
+memcache.incr('counter')
+value = memcache.get('counter')
+print value
+# 8
+                        </code></pre>
+                    </section>
+                    <section>
+                        <ul>
+                            <li>współdzielony między instancjami</li>
+                            <li>dane trzymane jako stringi</li>
+                            <li>wsparcie dla liczników</li>
+                            <li>compare and set</li>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
+                    <h1 style="color: red">(do nazwania)</h1>
+                    <h2>ciekawostki?</h2>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Przestrzenie nazw</h2>
+
+                        <pre><code class="python" data-trim="">
+from google.appengine.api import namespace_manager
+
+namespace_manager.set_namespace('kopytko')
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Wsparcie</h3>
+                        <ul>
+                            <li>Datastore</li>
+                            <li>Search API</li>
+                            <li>taskqueue</li>
+                            <li>memcache</li>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Logi</h2>
+
+                        <pre><code class="python" data-trim>
+import logging
+
+logging.info('Whoo!')
+logging.warning('Oops!')
+logging.error(':(')
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h1 style="color: red">tutaj obrazek z konsoli</h1>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Cloud Endpoints</h2>
+                    </section>
+                    <section>
+                        <p><img style="background: #fff" src="img/endpoints.png" alt=""></p>
+                    </section>
+                    <section>
+                        <h3>Przykładowy endpoint</h3>
+                        <pre><code class="python" data-trim="">
+@endpoints.api(
+    name='hello',
+    version='v1',
+)
+class HelloService(remote.Service):
+    @endpoints.method(
+        messages.LanguageMessage,
+        messages.GreetMessage,
+    )
+    def greet(self, request):
+        greeting = {
+            'pl': 'Cześć!',
+            'en': 'Howdy!',
+            'sp': 'Hola!',
+        }.get(request.language)
+        return GreetMessage(greeting=greeting)
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h4>messages.py</h4>
+                        <pre><code class="python" data-trim="">
+from protorpc import messages
+
+
+class LanguageMessage(messages.Message):
+    language = messages.StringFielg(
+        1,
+        required=False,
+        default='pl',
+    )
+
+
+class GreetMessage(messages.Message):
+    greeting = messages.StringFielg(1, required=True)
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Wystawione API</h3>
+                        <pre><code data-trim="">
+https://wrocpy.appspot.com/_ah/spi/hello/v1/greet
+                        </code></pre>
+                        <ul>
+                            <li>komunikacja: JSON</li>
+                            <li></li>
+                            <li></li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3>Fajnie? Niby fajnie...</h3>
+                        <ul>
+                            <li>świetne na prototypowanie</li>
+                            <li>średnie na produkcję</li>
+                            <li>wersjonowanie API - słabo!</li>
+                            <li>zabugowane generatory</li>
+                            <li>brak wsparcia dla domen</li>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
+                    <h1>Środowisko lokalne</h1>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>dev_appserver</h2>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Testowanie</h2>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Remote API shell</h2>
+                    </section>
                 </section>
             </div>
         </div>
