@@ -234,6 +234,8 @@ application = webapp2.WSGIApplication([
                     </section>
                 </section>
 
+
+
                 <section>
                     <h1>Przechowywanie danych</h1>
                 </section>
@@ -408,24 +410,41 @@ updated_at = change_name_async(ndb.Key(Hello, 123), 'Whooo').get_result()
                     </section>
                 </section>
                 <section>
-                    <h2>Search API</h2>
-                    <ul>
-                        <li>wyszukiwarka pełnotekstowa</li>
-                        <li>idealna do... wyszukiwania! (w porównaniu z ndb)</li>
-                        <li>
-                            brak ograniczeń co do złożoności zapytań
-                            <ul>
-                                <li><code>kopytko OR (count>7 AND (NOT type=cat OR type=lion))</code></li>
-                            </ul>
-                        </li>
-                        <li>
-                            współrzędne geograficzne:
-                            <ul>
-                                <li><code>distance(loc, geopoint(12, 34)) > 10000</code></li>
-                            </ul>
-                        </li>
-                        <li>dynamiczne sortowanie wg wyrażenia</li>
-                    </ul>
+                    <section>
+                        <h2>Search API</h2>
+                    </section>
+                    <section>
+                        <ul>
+                            <li>wyszukiwarka pełnotekstowa</li>
+                            <li>idealna do... wyszukiwania! (w porównaniu z ndb)</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <ul>
+                            <li>
+                                brak ograniczeń co do złożoności zapytań
+                                <ul>
+                                    <li><code>kopytko OR (count>7 AND (NOT type=cat OR type=lion))</code></li>
+                                </ul>
+                            </li>
+                            <li>
+                                współrzędne geograficzne:
+                                <ul>
+                                    <li><code>distance(loc, geopoint(12, 34)) > 10000</code></li>
+                                </ul>
+                            </li>
+                            <li>dynamiczne sortowanie wg wyrażenia</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3>Wszystko fajnie, ale...</h3>
+                        <ul>
+                            <li>słaba dokumentacja</li>
+                            <li>niespójny interfejs (np. kursor)</li>
+                            <li>potrafi rzucić losowym wyjątkiem</li>
+                            <li>strasznie zwalnia dla dużych zbiorów</li>
+                        </ul>
+                    </section>
                 </section>
                 <section>
                     <section>
@@ -462,6 +481,56 @@ IOError: [Errno 30] Read-only file system: 'file.txt'
                             <li>zewnętrzna usługa</li>
                             <li>wiadra, katalogi i pliki</li>
                             <li>dostęp: HTTP lub <code>gsutil</code></li>
+                            <li>niedostępny jako builtin ಠ_ಠ</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3>Images API</h3>
+                        <pre><code class="python" data-trim>
+from google.appengine.api import images
+
+blob_key = some_magic_stuff()
+url = images.get_serving_url(blob_key)
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h4>URL</h4>
+                        <pre><code data-trim>
+https://lh4.ggpht.com/[a-zA-Z0-9\-]+
+
+https://lh4.ggpht.com/0FEEDADEADF15h
+                        </code></pre>
+                        <h4>URL - resize</h4>
+                        <pre><code data-trim>
+https://lh4.ggpht.com/[a-zA-Z0-9\-]+=(w|s|h)\d+
+
+https://lh4.ggpht.com/0FEEDADEADF15h=s300
+                        </code></pre>
+                        <h4>URL - resize + crop</h4>
+                        <pre><code data-trim>
+https://lh4.ggpht.com/[a-zA-Z0-9\-]+=(w|s|h)\d+(-c|)
+
+https://lh4.ggpht.com/0FEEDADEADF15h=s300-c
+                        </code></pre>
+                    </section>
+                </section>
+                <section>
+                    <section>
+                        <h2>BigQuery</h2>
+                    </section>
+                    <section>
+                        <ul>
+                            <li>relacyjna baza danych (hurtownia)</li>
+                            <li>tylko dodawanie nowych rekordów</li>
+                            <li>brak możliwości modyfikacji relacji</li>
+                            <li>radzi sobie z terabajtami danych</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <ul>
+                            <li>zapytania są <b>wolne</b> (kilka sekund do kilku godzin)</li>
+                            <li>tryb synchroniczny i asynchroniczny</li>
+                            <li>tabele tymczasowe</li>
                         </ul>
                     </section>
                 </section>
@@ -471,16 +540,6 @@ IOError: [Errno 30] Read-only file system: 'file.txt'
                         <li>MySQL podpięty pod aplikację w App Engine</li>
                         <li>dostępny także poza App Engine</li>
                         <li>builtin: <code>MySQLdb</code></li>
-                    </ul>
-                </section>
-                <section>
-                    <h2>BigQuery</h2>
-                    <ul>
-                        <li>relacyjna baza danych (hurtownia)</li>
-                        <li>tylko dodawanie nowych rekordów</li>
-                        <li>brak możliwości modyfikacji relacji</li>
-                        <li>radzi sobie z terabajtami danych</li>
-                        <li>w porównaniu z ndb/Search API, zapytania są wolne</li>
                     </ul>
                 </section>
             </div>
