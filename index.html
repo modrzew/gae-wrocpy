@@ -25,6 +25,33 @@
         <div class="reveal">
             <div class="slides">
                 <section>
+                    <h1>Z głową w chmurze</h1>
+                    <h3>Google App Engine &amp; Google Cloud</h3>
+                </section>
+
+                <section>
+                    <h1>Google App Engine</h1>
+                </section>
+
+                <section>
+                    <section>
+                        <ul>
+                            <li>platforma jako usługa (PaaS)</li>
+                            <li></li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h2>Wspierane języki</h2>
+                        <ul>
+                            <li>Python</li>
+                            <li>Java (od 2009)</li>
+                            <li>Go (od 2011)</li>
+                            <li>PHP (od 2013)</li>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
                     <h1>Hello world</h1>
                 </section>
                 <section>
@@ -326,6 +353,24 @@ if more:
         100,
         start_cursor=cursor,
     )
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Indeksy</h3>
+                        <pre><code class="yaml" data-trim>
+indexes:
+- kind: Hello
+  properties:
+  - name: count
+    direction: desc
+  - name: name
+  - name: created_at
+    direction: desc
+- kind: Hello
+  properties:
+  - name: count
+  - name: updated_at
+    direction: desc
                         </code></pre>
                     </section>
                     <section>
@@ -809,8 +854,58 @@ print value
                 </section>
 
                 <section>
+                    <section>
+                        <h1>Wirtualizacja</h1>
+                    </section>
+
+                    <section>
+                        <h2>Compute Engine</h2>
+                        <ul>
+                            <li>maszyny wirtualne w chmurze</li>
+                            <li>łatwo skalowalne</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Przypadek użycia</h3>
+                        <ul>
+                            <li>wysokodostępna aplikacja webowa na App Engine</li>
+                            <li>backend przetwarzający ogromne zbiory danych na Compute Engine</li>
+                            <li>wymagający niskopoziomowych bibliotek</li>
+                            <li>komunikacja: HTTP</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2>Managed VMs</h2>
+                        <ul>
+                            <li>App Engine + Compute Engine</li>
+                            <li>oparty na Dockerze \o/</li>
+                            <li>możliwość uruchomienia (i automagicznego skalowania) dowolnego kodu</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Korzyści</h3>
+                        <ul>
+                            <li>brak izolacji środowiska</li>
+                            <li>brak ograniczeń co do użytych rozwiązań</li>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
                     <h1 style="color: red">(do nazwania)</h1>
                     <h2>ciekawostki?</h2>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Administracja</h2>
+                    </section>
+                    <section>
+                        <h1 style="color: red">skrinszot</h1>
+                    </section>
                 </section>
 
                 <section>
@@ -928,17 +1023,89 @@ https://wrocpy.appspot.com/_ah/spi/hello/v1/greet
                     <section>
                         <h2>dev_appserver</h2>
                     </section>
+                    <section>
+                        <ul>
+                            <li>serwer działający na localhoście</li>
+                            <li><i>emuluje</i> działanie App Engine</li>
+                            <li>brak asynchroniczności</li>
+                            <li>wsparcie dla wielowątkowości od niedawna</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h1 style="color: red">skrinszot</h1>
+                    </section>
                 </section>
 
                 <section>
                     <section>
                         <h2>Testowanie</h2>
                     </section>
+                    <section>
+                        <pre><code class="python" data-trim>
+class GAETestCase(unittest.TestCase):
+    APP_ID = testbed.DEFAULT_ENVIRONMENT['APPLICATION_ID']
+    APP_PATH = os.path.dirname(__file__)
+
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+
+        self.testbed.setup_env(app_id=self.APP_ID)
+        super(GAEBaseTestCase, self).setUp()
+
+    def tearDown(self):
+        self.testbed.deactivate()
+        super(GAEBaseTestCase, self).tearDown()
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Stuby</h3>
+                        <pre><code class="python" data-trim>
+self.testbed.init_memcache_stub()
+self.testbed.init_urlfetch_stub()
+self.testbed.init_app_identity_stub()
+self.testbed.init_blobstore_stub()
+self.testbed.init_search_stub()
+self.testbed.init_modules_stub()
+self.testbed.init_images_stub()
+self.testbed.init_taskqueue_stub(root_path=self.APP_PATH)
+self.taskqueue = self.testbed.get_stub('taskqueue')
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Datastore stub</h3>
+                        <pre><code class="python" data-trim>
+self.policy = datastore_stub_util.PseudoRandomHRConsistencyPolicy(
+    probability=1,
+)
+self.testbed.init_datastore_v3_stub(
+    consistency_policy=self.policy,
+    require_indexes=True,
+    root_path=self.APP_PATH,
+    auto_id_policy=testbed.AUTO_ID_POLICY_SCATTERED,
+)
+                        </code></pre>
+                    </section>
                 </section>
 
                 <section>
                     <section>
                         <h2>Remote API shell</h2>
+                    </section>
+                    <section>
+                        <ul>
+                            <li>możliwość wykonania RPC spoza App Engine</li>
+                            <li>RPC/HTTP</li>
+                            <li>kod wykonuje się <b>lokalnie</b></li>
+                        </ul>
+                    </section>
+                    <section>
+                        <pre><code class="python" data-trim>
+>>> from models import Hello
+>>> hello = Hello.get_by_id(123)
+>>> hello.name = 'kopytko'
+>>> hello.put()
+                        </code></pre>
                     </section>
                 </section>
             </div>
