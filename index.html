@@ -7,6 +7,7 @@
         <link rel="stylesheet" href="css/reveal.css">
         <link rel="stylesheet" href="css/theme/black.css" id="theme">
         <link rel="stylesheet" href="lib/css/zenburn.css">
+        <link rel="stylesheet" href="css/extra.css">
 
         <!-- Printing and PDF exports -->
         <script>
@@ -24,20 +25,24 @@
     <body>
         <div class="reveal">
             <div class="slides">
-                <section>
+                <section data-background="img/hero.png" data-background-size="250px" data-background-position="20% 280%">
                     <h1>Z głową w chmurze</h1>
                     <h3>Google App Engine &amp; Google Cloud</h3>
+                    <p class="signature">Tomasz Modrzyński / <a href="https://stxnext.com/">STX Next</a></p>
                 </section>
 
                 <section>
                     <h1>Google App Engine</h1>
+                    <p><img src="img/appengine.png" alt="" style="border: 0; background: transparent; box-shadow: none"></p>
                 </section>
 
                 <section>
                     <section>
+                        <h2>Co to?</h2>
                         <ul>
                             <li>platforma jako usługa (PaaS)</li>
-                            <li></li>
+                            <li>własne aplikacje działające w infrastrukturze Google</li>
+                            <li>samoskalowalne i wysokodostępne (99.95% SLA, automatyczna replikacja danych)</li>
                         </ul>
                     </section>
                     <section>
@@ -48,6 +53,10 @@
                             <li>Go (od 2011)</li>
                             <li>PHP (od 2013)</li>
                         </ul>
+                    </section>
+                    <section>
+                        <h2>SDK</h2>
+                        <p><a href="https://cloud.google.com/appengine/downloads">cloud.google.com/appengine/downloads</a></p>
                     </section>
                 </section>
 
@@ -114,6 +123,7 @@ $> appcfg.py update app.yaml
                 <section>
                     <section>
                         <h2>Django</h2>
+                        <p><img src="img/django.png" alt=""></p>
                     </section>
 
                     <section>
@@ -234,7 +244,7 @@ if distlib_path not in sys.path:
                 </section>
 
                 <section>
-                    <section>
+                    <section id="webapp">
                         <h2>webapp2</h2>
                         <p><a href="https://webapp-improved.appspot.com/">webapp-improved.appspot.com</a></p>
                     </section>
@@ -272,7 +282,7 @@ application = webapp2.WSGIApplication([
                             <li>nierelacyjna baza danych</li>
                             <li>klucz/wartość</li>
                             <li>ewentualnie spójna (eventual consistency)</li>
-                            <li>wysoka dostępność danych (zapis/odczyt)</li>
+                            <li>wysoka dostępność danych</li>
                             <li>transakcje i ACID</li>
                             <li>wsparcie dla zapytań (GQL)</li>
                         </ul>
@@ -313,7 +323,7 @@ class Hello(ndb.Model):
         logging.info('Before putting!')
         self.count += 1
 
-    def _post_put_hook(self):
+    def _post_put_hook(self, future):
         logging.info('After putting!')
         self.count += 2
                         </code></pre>
@@ -397,7 +407,7 @@ print new_obj
                             <li>ale nie można ich nadużywać /o\</li>
                         </ul>
                     </section>
-                    <section>
+                    <section id="ancestorqueries">
                         <h3>Ancestor queries</h3>
                         <ul>
                             <li>obiekty w bazie mogą mieć swojego "przodka"</li>
@@ -406,7 +416,7 @@ print new_obj
                             <li>bardziej wydajne niż zwykłe zapytania</li>
                         </ul>
                     </section>
-                    <section>
+                    <section id="transakcje">
                         <h3>Transakcje</h3>
                         <pre><code class="python" data-trim>
 @ndb.transactional(retries=3)
@@ -421,7 +431,7 @@ def change_name(hello_key, name):
     return hello.updated_at
                         </code></pre>
                     </section>
-                    <section>
+                    <section id="asynchronicznosc">
                         <h3>Asynchroniczność</h3>
                         <pre><code class="python" data-trim>
 hello = Hello(name='Howdy!')
@@ -432,7 +442,7 @@ hello_key = hello_future.get_result()
 another_hello = another_hello_future.get_result()
                         </code></pre>
                     </section>
-                    <section>
+                    <section id="asynchronicznosc-tasklety">
                         <h3>Asynchroniczność: tasklety</h3>
                         <pre><code class="python" data-trim>
 @ndb.transactional(retries=3)
@@ -453,6 +463,17 @@ updated_at = change_name_async(
     'Whooo',
 ).get_result()
                         </code></pre>
+                    </section>
+                    <section id="coztymdjango">
+                        <h3>Co z tym Django?</h3>
+                        <ul>
+                            <li>Django: relacyjne</li>
+                            <li>Datastore: nierelacyjne</li>
+                            <li>ಠ︵ಠ</li>
+                            <div class="fragment">
+                                <li>django-nonrel <a href="http://django-nonrel.org/"><small>django-nonrel.org</small></a></li>
+                            </div>
+                        </ul>
                     </section>
                 </section>
                 <section>
@@ -748,16 +769,17 @@ urlfetch.fetch(url)
                         <h3>queue.yaml</h3>
                         <pre><code class="yaml" data-trim="">
 queue:
-- name: incoming
-  mode: pull
-
 - name: default
   rate: 20/s
+
+- name: incoming
+  mode: pull
                         </code></pre>
                     </section>
                     <section>
                         <h3>push queues</h3>
                         <pre><code class="yaml" data-trim="">
+queue:
 - name: user-actions
   rate: 500/s
   bucket_size: 100
@@ -855,99 +877,6 @@ print value
 
                 <section>
                     <section>
-                        <h1>Wirtualizacja</h1>
-                    </section>
-
-                    <section>
-                        <h2>Compute Engine</h2>
-                        <ul>
-                            <li>maszyny wirtualne w chmurze</li>
-                            <li>łatwo skalowalne</li>
-                        </ul>
-                    </section>
-
-                    <section>
-                        <h3>Przypadek użycia</h3>
-                        <ul>
-                            <li>wysokodostępna aplikacja webowa na App Engine</li>
-                            <li>backend przetwarzający ogromne zbiory danych na Compute Engine</li>
-                            <li>wymagający niskopoziomowych bibliotek</li>
-                            <li>komunikacja: HTTP</li>
-                        </ul>
-                    </section>
-
-                    <section>
-                        <h2>Managed VMs</h2>
-                        <ul>
-                            <li>App Engine + Compute Engine</li>
-                            <li>oparty na Dockerze \o/</li>
-                            <li>możliwość uruchomienia (i automagicznego skalowania) dowolnego kodu</li>
-                        </ul>
-                    </section>
-
-                    <section>
-                        <h3>Korzyści</h3>
-                        <ul>
-                            <li>brak izolacji środowiska</li>
-                            <li>brak ograniczeń co do użytych rozwiązań</li>
-                        </ul>
-                    </section>
-                </section>
-
-                <section>
-                    <h1 style="color: red">(do nazwania)</h1>
-                    <h2>ciekawostki?</h2>
-                </section>
-
-                <section>
-                    <section>
-                        <h2>Administracja</h2>
-                    </section>
-                    <section>
-                        <h1 style="color: red">skrinszot</h1>
-                    </section>
-                </section>
-
-                <section>
-                    <section>
-                        <h2>Przestrzenie nazw</h2>
-
-                        <pre><code class="python" data-trim="">
-from google.appengine.api import namespace_manager
-
-namespace_manager.set_namespace('kopytko')
-                        </code></pre>
-                    </section>
-                    <section>
-                        <h3>Wsparcie</h3>
-                        <ul>
-                            <li>Datastore</li>
-                            <li>Search API</li>
-                            <li>taskqueue</li>
-                            <li>memcache</li>
-                        </ul>
-                    </section>
-                </section>
-
-                <section>
-                    <section>
-                        <h2>Logi</h2>
-
-                        <pre><code class="python" data-trim>
-import logging
-
-logging.info('Whoo!')
-logging.warning('Oops!')
-logging.error(':(')
-                        </code></pre>
-                    </section>
-                    <section>
-                        <h1 style="color: red">tutaj obrazek z konsoli</h1>
-                    </section>
-                </section>
-
-                <section>
-                    <section>
                         <h2>Cloud Endpoints</h2>
                     </section>
                     <section>
@@ -1016,6 +945,113 @@ https://wrocpy.appspot.com/_ah/spi/hello/v1/greet
                 </section>
 
                 <section>
+                    <section>
+                        <h2>Przestrzenie nazw</h2>
+
+                        <pre><code class="python" data-trim="">
+from google.appengine.api import namespace_manager
+
+namespace_manager.set_namespace('kopytko')
+# or explicitly
+hello = Hello(id=123, name='Hi there', namespace='kopytko')
+hello.put()
+                        </code></pre>
+                    </section>
+                    <section>
+                        <h3>Wsparcie</h3>
+                        <ul>
+                            <li>Datastore</li>
+                            <li>Search API</li>
+                            <li>taskqueue</li>
+                            <li>memcache</li>
+                        </ul>
+                    </section>
+                </section>
+
+
+                <section>
+                    <section>
+                        <h1>Wirtualizacja</h1>
+                    </section>
+
+                    <section>
+                        <h2>Compute Engine</h2>
+                        <ul>
+                            <li>maszyny wirtualne w chmurze</li>
+                            <li>łatwo skalowalne</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Przypadek użycia</h3>
+                        <ul>
+                            <li>wysokodostępna aplikacja webowa na App Engine</li>
+                            <li>backend przetwarzający ogromne zbiory danych na Compute Engine</li>
+                            <li>wymagający niskopoziomowych bibliotek</li>
+                            <li>komunikacja: HTTP</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2>Managed VMs</h2>
+                        <ul>
+                            <li>App Engine + Compute Engine</li>
+                            <li>oparty na Dockerze \o/</li>
+                            <li>możliwość uruchomienia (i automagicznego skalowania) dowolnego kodu</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Korzyści</h3>
+                        <ul>
+                            <li>brak izolacji środowiska</li>
+                            <li>brak ograniczeń co do użytych rozwiązań</li>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h1>Administracja</h1>
+                        <p><a href="https://appengine.google.com/">appengine.google.com</a></p>
+                        <p><a href="https://console.developers.google.com/project">console.developers.google.com</a></p>
+                    </section>
+                    <section>
+                        <h3>Czym chata bogata</h3>
+                        <p><img src="img/menu.png" alt=""></p>
+                    </section>
+                    <section>
+                        <h3>Zużycie</h3>
+                        <p><img src="img/usage.png" alt=""></p>
+                    </section>
+                    <section>
+                        <h3>Wizualizacja</h3>
+                        <p><img src="img/chart.png" alt=""></p>
+                    </section>
+                    <section>
+                        <h3>Logi</h3>
+
+                        <pre><code class="python" data-trim>
+import logging
+
+class LoggingHandler(webapp2.RequestHandler):
+    def get(self):
+        logging.info('I am a request!')
+        logging.debug('User key: %s', ndb.Key('User', 123))
+        logging.info('Doing some crazy stuff')
+        try:
+            raise ValueError
+        except ValueError:
+            logging.exception('Oh no, an exception!')
+        logging.info('Finishing')
+                        </code></pre>
+                    </section>
+                    <section>
+                        <p><img src="img/logs.png" alt=""></p>
+                    </section>
+                </section>
+
+                <section>
                     <h1>Środowisko lokalne</h1>
                 </section>
 
@@ -1029,10 +1065,11 @@ https://wrocpy.appspot.com/_ah/spi/hello/v1/greet
                             <li><i>emuluje</i> działanie App Engine</li>
                             <li>brak asynchroniczności</li>
                             <li>wsparcie dla wielowątkowości od niedawna</li>
+                            <li>pdb</li>
                         </ul>
                     </section>
                     <section>
-                        <h1 style="color: red">skrinszot</h1>
+                        <p><img src="img/devappserver.png" alt=""></p>
                     </section>
                 </section>
 
@@ -1101,10 +1138,15 @@ self.testbed.init_datastore_v3_stub(
                     </section>
                     <section>
                         <pre><code class="python" data-trim>
->>> from models import Hello
->>> hello = Hello.get_by_id(123)
->>> hello.name = 'kopytko'
->>> hello.put()
+App Engine remote_api shell
+Python 2.7.8 (default, Oct 17 2014, 09:34:51)
+[GCC 4.7.2]
+The db, ndb, users, urlfetch, and memcache modules are imported.
+s~wrocpy> from models import Hello
+s~wrocpy> hello = Hello.get_by_id(123)
+s~wrocpy> hello.name = 'kopytko'
+s~wrocpy> hello.put()
+Key('Hello', 123)
                         </code></pre>
                     </section>
                 </section>

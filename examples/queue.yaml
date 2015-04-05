@@ -1,0 +1,20 @@
+queue:
+- name: default
+  rate: 20/s
+
+- name: incoming
+  mode: pull
+
+- name: user-actions
+  rate: 500/s
+  bucket_size: 100
+  max_concurrent_requests: 500
+
+- name: denormalization
+  rate: 10/s
+  bucket_size: 5
+  max_concurrent_requests: 5
+  retry_parameters:
+    min_backoff_seconds: 3600
+    task_age_limit: 12h
+    max_doublings: 3

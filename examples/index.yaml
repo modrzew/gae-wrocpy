@@ -1,0 +1,13 @@
+indexes:
+- kind: Hello
+  properties:
+  - name: count
+    direction: desc
+  - name: name
+  - name: created_at
+    direction: desc
+- kind: Hello
+  properties:
+  - name: count
+  - name: updated_at
+    direction: desc
