@@ -825,7 +825,7 @@ def do_something(wr, oc, py=None):
         wr.py = py
     wr.put()
 
-deferred.defer(do_something, _queue='user-actions')
+deferred.defer(do_something, 2, 5, py='#1', _queue='user-actions')
                         </code></pre>
                     </section>
                 </section>
@@ -928,8 +928,9 @@ https://wrocpy.appspot.com/_ah/spi/hello/v1/greet
                         </code></pre>
                         <ul>
                             <li>komunikacja: JSON</li>
-                            <li></li>
-                            <li></li>
+                            <li>iOS: <code>hello.discovery</code></li>
+                            <li>Android: <code>hello.jar</code></li>
+                            <li>JS: brak</li>
                         </ul>
                     </section>
                     <section>
